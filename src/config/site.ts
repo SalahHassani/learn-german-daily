@@ -1,5 +1,9 @@
-﻿export const SITE_CONFIG = {
+﻿export const siteConfig = {
   name: "Learn German Daily",
   tagline: "A little German. Every day.",
-  defaultLocale: "en",
+  designSystem: {
+    name: "Academic Editorial",
+    theme: "light" as const,
+    colorDistribution: "50-30-10-10" as const,
+  },
 } as const;

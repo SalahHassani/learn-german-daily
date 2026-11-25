@@ -2,52 +2,12 @@
 
 A little German. Every day.
 
-## Project Overview
+## Milestones
+- **Milestone 0:** Project foundation, routing skeleton, types, and `ContentService` contract.
+- **Milestone 1:** Academic editorial brand identity, 50-30-10-10 tokens, typography, and reusable UI primitives.
 
-Learn German Daily is a structured German-learning platform.
-
-The application uses Next.js, TypeScript and Tailwind CSS.
-
-The architecture separates learning content from application code
-and supports dynamic CEFR levels, courses, weeks and lessons.
-
-## Development
-
-Install dependencies:
-
-`npm install`
-
-Start development:
-
-`npm run dev`
-
-Run lint:
-
-`npm run lint`
-
-Check TypeScript:
-
-`npx tsc --noEmit`
-
-Build:
-
-`npm run build`
-
-## Python Environment
-
-Create the environment:
-
-`python -m venv .venv`
-
-Activate it in PowerShell:
-
-`.\.venv\Scripts\Activate.ps1`
-
-Install Python packages:
-
-`python -m pip install -r requirements.txt`
-
-## Architecture
-
-See `docs/architecture/` for routing, folder structure
-and content-service documentation.
+## Commands
+- `npm run dev` — Start local development server
+- `npm run lint` — Run ESLint
+- `npx tsc --noEmit` — Run TypeScript check
+- `npm run build` — Run production build
