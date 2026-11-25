@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
-import { getAllLevels } from "@/services/content/m2StructuralData";
+import { contentService } from "@/services/content/contentService";
+import { getStatusLabel } from "@/services/content/visibilityPolicy";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
@@ -25,7 +26,7 @@ const JOURNEY_STEPS = [
 ];
 
 export default function HomePage() {
-  const levels = getAllLevels();
+  const levels = contentService.getLevels();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
@@ -86,23 +87,26 @@ export default function HomePage() {
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {levels.map((level) => (
-            <Card key={level.slug} surface="standard" interactive>
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold">{level.name}</h3>
-                {level.availabilityLabel ? <Badge tone="neutral">{level.availabilityLabel}</Badge> : null}
-              </div>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">{level.summary}</p>
-              <div className="mt-4">
-                <Link
-                  href={`/levels/${level.slug}`}
-                  className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
-                >
-                  Open {level.code}
-                </Link>
-              </div>
-            </Card>
-          ))}
+          {levels.map((level) => {
+            const statusLabel = getStatusLabel(level.status);
+            return (
+              <Card key={level.id} surface="standard" interactive>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-lg font-semibold">{level.name}</h3>
+                  {statusLabel ? <Badge tone="neutral">{statusLabel}</Badge> : null}
+                </div>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">{level.description}</p>
+                <div className="mt-4">
+                  <Link
+                    href={`/levels/${level.slug}`}
+                    className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
+                  >
+                    Open {level.slug.toUpperCase()}
+                  </Link>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </section>
     </main>

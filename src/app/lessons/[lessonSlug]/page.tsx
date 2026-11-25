@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getLessonBySlug } from "@/services/content/m2StructuralData";
+import { contentService } from "@/services/content/contentService";
+import { getStatusLabel, isComingSoonStatus } from "@/services/content/visibilityPolicy";
 import { Breadcrumb } from "@/components/navigation/breadcrumb";
 import { StructuralState } from "@/components/navigation/structural-state";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
 
 type PageProps = {
@@ -12,7 +14,7 @@ type PageProps = {
 
 async function LessonContent({ params }: { params: PageProps["params"] }) {
   const { lessonSlug } = await params;
-  const result = getLessonBySlug(lessonSlug);
+  const result = contentService.getLessonBySlug(lessonSlug);
 
   if (!result) {
     return (
@@ -29,7 +31,9 @@ async function LessonContent({ params }: { params: PageProps["params"] }) {
     );
   }
 
-  const { level, course, week, lesson } = result;
+  const { level, course, week, lesson, previousLessonSlug, nextLessonSlug } = result;
+  const levelCode = level.slug.toUpperCase();
+  const lessonStatusLabel = getStatusLabel(lesson.status);
 
   return (
     <>
@@ -37,7 +41,7 @@ async function LessonContent({ params }: { params: PageProps["params"] }) {
         items={[
           { label: "Home", href: "/" },
           { label: "Levels", href: "/levels" },
-          { label: level.code, href: `/levels/${level.slug}` },
+          { label: levelCode, href: `/levels/${level.slug}` },
           { label: course.title, href: `/courses/${course.slug}` },
           { label: week.title, href: `/courses/${course.slug}/weeks/${week.slug}` },
           { label: lesson.title },
@@ -47,15 +51,29 @@ async function LessonContent({ params }: { params: PageProps["params"] }) {
       <p className="text-sm font-medium text-[var(--text-secondary)]">
         {course.title} &middot; {week.title}
       </p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{lesson.title}</h1>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{lesson.title}</h1>
+        {lessonStatusLabel ? <Badge tone="neutral">{lessonStatusLabel}</Badge> : null}
+      </div>
 
-      <Card surface="secondary" className="mt-8 max-w-3xl">
-        <h2 className="text-lg font-semibold">Lesson workspace structure</h2>
-        <p className="mt-2 text-sm text-[var(--text-primary)]">
-          Structural entry point reserved for upcoming lesson modules. Lesson content and interactive exercises are
-          introduced in a later milestone.
-        </p>
-      </Card>
+      {isComingSoonStatus(lesson.status) ? (
+        <div className="mt-8">
+          <StructuralState
+            title={`${lesson.title} — Coming soon`}
+            description={`Lesson content for ${lesson.title} in ${week.title} is planned and not yet available.`}
+            actionHref={`/courses/${course.slug}/weeks/${week.slug}`}
+            actionLabel={`Back to ${week.title}`}
+          />
+        </div>
+      ) : (
+        <Card surface="secondary" className="mt-8 max-w-3xl">
+          <h2 className="text-lg font-semibold">Lesson content structure ready</h2>
+          <p className="mt-2 text-sm text-[var(--text-primary)]">{lesson.description}</p>
+          <p className="mt-2 text-xs text-[var(--text-secondary)]">
+            Lesson ID: {lesson.id} &middot; Configured sections: {lesson.sections.length}
+          </p>
+        </Card>
+      )}
 
       <Divider className="my-8" />
 
@@ -76,17 +94,17 @@ async function LessonContent({ params }: { params: PageProps["params"] }) {
         </div>
 
         <div className="flex items-center gap-4">
-          {lesson.previousLessonSlug ? (
+          {previousLessonSlug ? (
             <Link
-              href={`/lessons/${lesson.previousLessonSlug}`}
+              href={`/lessons/${previousLessonSlug}`}
               className="text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
             >
               Previous lesson
             </Link>
           ) : null}
-          {lesson.nextLessonSlug ? (
+          {nextLessonSlug ? (
             <Link
-              href={`/lessons/${lesson.nextLessonSlug}`}
+              href={`/lessons/${nextLessonSlug}`}
               className="text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
             >
               Next lesson

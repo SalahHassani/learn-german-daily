@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getWeekBySlugs } from "@/services/content/m2StructuralData";
+import { contentService } from "@/services/content/contentService";
+import { getStatusLabel, isComingSoonStatus } from "@/services/content/visibilityPolicy";
 import { Breadcrumb } from "@/components/navigation/breadcrumb";
 import { StructuralState } from "@/components/navigation/structural-state";
 import { Card } from "@/components/ui/card";
@@ -12,7 +13,7 @@ type PageProps = {
 
 async function WeekContent({ params }: { params: PageProps["params"] }) {
   const { courseSlug, weekSlug } = await params;
-  const result = getWeekBySlugs(courseSlug, weekSlug);
+  const result = contentService.getWeekBySlugs(courseSlug, weekSlug);
 
   if (!result) {
     return (
@@ -36,7 +37,9 @@ async function WeekContent({ params }: { params: PageProps["params"] }) {
     );
   }
 
-  const { level, course, week } = result;
+  const { level, course, week, lessons } = result;
+  const levelCode = level.slug.toUpperCase();
+  const weekStatusLabel = getStatusLabel(week.status);
 
   return (
     <>
@@ -44,53 +47,71 @@ async function WeekContent({ params }: { params: PageProps["params"] }) {
         items={[
           { label: "Home", href: "/" },
           { label: "Levels", href: "/levels" },
-          { label: level.code, href: `/levels/${level.slug}` },
+          { label: levelCode, href: `/levels/${level.slug}` },
           { label: course.title, href: `/courses/${course.slug}` },
           { label: week.title },
         ]}
       />
 
       <p className="text-sm font-medium text-[var(--text-secondary)]">
-        {course.title} &middot; CEFR {level.code}
+        {course.title} &middot; CEFR {levelCode}
       </p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{week.title}</h1>
-      <p className="mt-2 max-w-2xl text-base text-[var(--text-secondary)]">{week.summary}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{week.title}</h1>
+        {weekStatusLabel ? <Badge tone="neutral">{weekStatusLabel}</Badge> : null}
+      </div>
+      <p className="mt-2 max-w-2xl text-base text-[var(--text-secondary)]">{week.theme}</p>
 
-      <section aria-labelledby="lessons-heading" className="mt-10">
-        <h2 id="lessons-heading" className="text-2xl font-bold tracking-tight">
-          Lessons
-        </h2>
+      {isComingSoonStatus(week.status) ? (
+        <div className="mt-8">
+          <StructuralState
+            title={`${week.title} — Coming soon`}
+            description={`Daily lessons for ${week.title} in ${course.title} are planned and not yet available.`}
+            actionHref={`/courses/${course.slug}`}
+            actionLabel={`Back to ${course.title}`}
+          />
+        </div>
+      ) : (
+        <section aria-labelledby="lessons-heading" className="mt-10">
+          <h2 id="lessons-heading" className="text-2xl font-bold tracking-tight">
+            Lessons
+          </h2>
 
-        {week.lessons.length === 0 ? (
-          <div className="mt-6">
-            <StructuralState
-              title="No lessons listed yet"
-              description={`${week.title} in ${course.title} has no lessons available yet.`}
-              actionHref={`/courses/${course.slug}`}
-              actionLabel={`Back to ${course.title}`}
-            />
-          </div>
-        ) : (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {week.lessons.map((lesson) => (
-              <Card key={lesson.slug} surface="standard" interactive>
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-semibold">{lesson.title}</h3>
-                  {lesson.availabilityLabel ? <Badge tone="neutral">{lesson.availabilityLabel}</Badge> : null}
-                </div>
-                <div className="mt-4">
-                  <Link
-                    href={`/lessons/${lesson.slug}`}
-                    className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
-                  >
-                    Open {lesson.title}
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
+          {lessons.length === 0 ? (
+            <div className="mt-6">
+              <StructuralState
+                title="No lessons listed yet"
+                description={`${week.title} in ${course.title} has no lessons available yet.`}
+                actionHref={`/courses/${course.slug}`}
+                actionLabel={`Back to ${course.title}`}
+              />
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {lessons.map((lesson) => {
+                const lessonStatusLabel = getStatusLabel(lesson.status);
+                return (
+                  <Card key={lesson.id} surface="standard" interactive>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-lg font-semibold">{lesson.title}</h3>
+                      {lessonStatusLabel ? <Badge tone="neutral">{lessonStatusLabel}</Badge> : null}
+                    </div>
+                    <p className="mt-2 text-sm text-[var(--text-secondary)]">{lesson.description}</p>
+                    <div className="mt-4">
+                      <Link
+                        href={`/lessons/${lesson.slug}`}
+                        className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
+                      >
+                        Open {lesson.title}
+                      </Link>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </>
   );
 }
