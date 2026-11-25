@@ -2,6 +2,7 @@ import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import { contentService } from "@/services/content/contentService";
 import { getStatusLabel } from "@/services/content/visibilityPolicy";
+import { NavigableCard } from "@/components/navigation/navigable-card";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
@@ -90,21 +91,16 @@ export default function HomePage() {
           {levels.map((level) => {
             const statusLabel = getStatusLabel(level.status);
             return (
-              <Card key={level.id} surface="standard" interactive>
+              <NavigableCard key={level.id} href={`/levels/${level.slug}`} surface="standard">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-lg font-semibold">{level.name}</h3>
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">{level.name}</h3>
                   {statusLabel ? <Badge tone="neutral">{statusLabel}</Badge> : null}
                 </div>
                 <p className="mt-2 text-sm text-[var(--text-secondary)]">{level.description}</p>
-                <div className="mt-4">
-                  <Link
-                    href={`/levels/${level.slug}`}
-                    className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
-                  >
-                    Open {level.slug.toUpperCase()}
-                  </Link>
-                </div>
-              </Card>
+                <span className="mt-4 inline-block text-sm font-medium text-[var(--accent-academic-blue)] group-hover:underline">
+                  Open {level.slug.toUpperCase()}
+                </span>
+              </NavigableCard>
             );
           })}
         </div>

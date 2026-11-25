@@ -1,10 +1,9 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { contentService } from "@/services/content/contentService";
 import { getStatusLabel, isComingSoonStatus } from "@/services/content/visibilityPolicy";
 import { Breadcrumb } from "@/components/navigation/breadcrumb";
+import { NavigableCard } from "@/components/navigation/navigable-card";
 import { StructuralState } from "@/components/navigation/structural-state";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 type PageProps = {
@@ -79,21 +78,16 @@ async function LevelContent({ params }: { params: PageProps["params"] }) {
               {courses.map((course) => {
                 const courseStatusLabel = getStatusLabel(course.status);
                 return (
-                  <Card key={course.id} surface="standard" interactive>
+                  <NavigableCard key={course.id} href={`/courses/${course.slug}`} surface="standard">
                     <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-xl font-semibold">{course.title}</h3>
+                      <h3 className="text-xl font-semibold text-[var(--text-primary)]">{course.title}</h3>
                       {courseStatusLabel ? <Badge tone="neutral">{courseStatusLabel}</Badge> : null}
                     </div>
                     <p className="mt-2 text-sm text-[var(--text-primary)]">{course.description}</p>
-                    <div className="mt-5">
-                      <Link
-                        href={`/courses/${course.slug}`}
-                        className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
-                      >
-                        Open {course.title}
-                      </Link>
-                    </div>
-                  </Card>
+                    <span className="mt-5 inline-block text-sm font-medium text-[var(--accent-academic-blue)] group-hover:underline">
+                      Open {course.title}
+                    </span>
+                  </NavigableCard>
                 );
               })}
             </div>

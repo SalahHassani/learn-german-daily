@@ -1,8 +1,7 @@
-﻿import Link from "next/link";
-import { contentService } from "@/services/content/contentService";
+﻿import { contentService } from "@/services/content/contentService";
 import { getStatusLabel } from "@/services/content/visibilityPolicy";
 import { Breadcrumb } from "@/components/navigation/breadcrumb";
-import { Card } from "@/components/ui/card";
+import { NavigableCard } from "@/components/navigation/navigable-card";
 import { Badge } from "@/components/ui/badge";
 
 export default function LevelsDirectoryPage() {
@@ -21,21 +20,16 @@ export default function LevelsDirectoryPage() {
         {levels.map((level) => {
           const statusLabel = getStatusLabel(level.status);
           return (
-            <Card key={level.id} surface="standard" interactive>
+            <NavigableCard key={level.id} href={`/levels/${level.slug}`} surface="standard">
               <div className="flex items-start justify-between gap-3">
-                <h2 className="text-xl font-semibold">{level.name}</h2>
+                <h2 className="text-xl font-semibold text-[var(--text-primary)]">{level.name}</h2>
                 {statusLabel ? <Badge tone="neutral">{statusLabel}</Badge> : null}
               </div>
               <p className="mt-2 text-sm text-[var(--text-primary)]">{level.description}</p>
-              <div className="mt-5">
-                <Link
-                  href={`/levels/${level.slug}`}
-                  className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
-                >
-                  View {level.slug.toUpperCase()} courses
-                </Link>
-              </div>
-            </Card>
+              <span className="mt-5 inline-block text-sm font-medium text-[var(--accent-academic-blue)] group-hover:underline">
+                View {level.slug.toUpperCase()} courses
+              </span>
+            </NavigableCard>
           );
         })}
       </div>

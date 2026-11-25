@@ -1,10 +1,9 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { contentService } from "@/services/content/contentService";
 import { getStatusLabel, isComingSoonStatus } from "@/services/content/visibilityPolicy";
 import { Breadcrumb } from "@/components/navigation/breadcrumb";
+import { NavigableCard } from "@/components/navigation/navigable-card";
 import { StructuralState } from "@/components/navigation/structural-state";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 type PageProps = {
@@ -82,21 +81,20 @@ async function CourseContent({ params }: { params: PageProps["params"] }) {
               {weeks.map((week) => {
                 const weekStatusLabel = getStatusLabel(week.status);
                 return (
-                  <Card key={week.id} surface="standard" interactive>
+                  <NavigableCard
+                    key={week.id}
+                    href={`/courses/${course.slug}/weeks/${week.slug}`}
+                    surface="standard"
+                  >
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-lg font-semibold">{week.title}</h3>
+                      <h3 className="text-lg font-semibold text-[var(--text-primary)]">{week.title}</h3>
                       {weekStatusLabel ? <Badge tone="neutral">{weekStatusLabel}</Badge> : null}
                     </div>
                     <p className="mt-2 text-sm text-[var(--text-secondary)]">{week.theme}</p>
-                    <div className="mt-4">
-                      <Link
-                        href={`/courses/${course.slug}/weeks/${week.slug}`}
-                        className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
-                      >
-                        View {week.title} lessons
-                      </Link>
-                    </div>
-                  </Card>
+                    <span className="mt-4 inline-block text-sm font-medium text-[var(--accent-academic-blue)] group-hover:underline">
+                      View {week.title} lessons
+                    </span>
+                  </NavigableCard>
                 );
               })}
             </div>

@@ -148,11 +148,16 @@ export class ContentService {
         ? siblingLessons[currentIndex + 1]?.slug
         : undefined;
 
+    const orderedLesson: StructuredLesson = {
+      ...lesson,
+      sections: [...lesson.sections].sort((a, b) => a.order - b.order),
+    };
+
     return {
       level,
       course,
       week,
-      lesson,
+      lesson: orderedLesson,
       previousLessonSlug,
       nextLessonSlug,
     };
@@ -160,4 +165,3 @@ export class ContentService {
 }
 
 export const contentService = new ContentService();
-
