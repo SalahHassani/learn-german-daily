@@ -1,69 +1,111 @@
-import Image from "next/image";
+import Link from "next/link";
+import { siteConfig } from "@/config/site";
+import { getAllLevels } from "@/services/content/m2StructuralData";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Divider } from "@/components/ui/divider";
 
-export default function Home() {
+const JOURNEY_STEPS = [
+  {
+    step: "1. CEFR Level",
+    detail: "Broad proficiency bands from A1 through C2 establish clear progression scope.",
+  },
+  {
+    step: "2. Course",
+    detail: "Focused course sequences organize study blocks within each CEFR level.",
+  },
+  {
+    step: "3. Week",
+    detail: "Weekly segments group structured daily study sessions at a steady pace.",
+  },
+  {
+    step: "4. Lesson",
+    detail: "Individual lesson routes provide dedicated study entry points along the hierarchy.",
+  },
+];
+
+export default function HomePage() {
+  const levels = getAllLevels();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <section aria-labelledby="hero-heading" className="max-w-3xl">
+        <p className="text-sm font-medium text-[var(--accent-academic-blue)]">{siteConfig.tagline}</p>
+        <h1 id="hero-heading" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+          {siteConfig.name}
+        </h1>
+        <p className="mt-4 text-base leading-relaxed text-[var(--text-primary)] sm:text-lg">
+          A calm, structured German-learning environment built around CEFR levels, courses, weeks, and lessons.
+          Designed for focused daily study without clutter.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          <Link
+            href="/levels"
+            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent-academic-blue)] px-5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-academic-blue-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Explore courses and levels
+          </Link>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <Divider className="my-12" />
+
+      <section aria-labelledby="journey-heading">
+        <h2 id="journey-heading" className="text-2xl font-bold tracking-tight">
+          Learning structure
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)] sm:text-base">
+          Navigate step by step from proficiency levels down to individual lessons.
+        </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {JOURNEY_STEPS.map((item) => (
+            <Card key={item.step} surface="secondary">
+              <h3 className="text-base font-semibold">{item.step}</h3>
+              <p className="mt-2 text-sm text-[var(--text-primary)]">{item.detail}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="levels-entry-heading" className="mt-14">
+        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+          <div>
+            <h2 id="levels-entry-heading" className="text-2xl font-bold tracking-tight">
+              CEFR levels
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Select a level to view its courses and hierarchy.
+            </p>
+          </div>
+          <Link
+            href="/levels"
+            className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
+          >
+            View all levels
+          </Link>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {levels.map((level) => (
+            <Card key={level.slug} surface="standard" interactive>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-lg font-semibold">{level.name}</h3>
+                {level.availabilityLabel ? <Badge tone="neutral">{level.availabilityLabel}</Badge> : null}
+              </div>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">{level.summary}</p>
+              <div className="mt-4">
+                <Link
+                  href={`/levels/${level.slug}`}
+                  className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
+                >
+                  Open {level.code}
+                </Link>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </section>
+    </main>
   );
 }
+
