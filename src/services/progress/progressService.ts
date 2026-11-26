@@ -1,7 +1,4 @@
-import {
-  contentService,
-  type ContentService,
-} from "@/services/content/contentService";
+import type { ContentService } from "@/services/content/contentService";
 import {
   PROGRESS_SCHEMA_VERSION,
   type ContinueLearningTarget,
@@ -26,9 +23,17 @@ import {
 import { createEmptyProgressState } from "./progressMigrations";
 import type { ProgressProvider } from "./progressProvider";
 
+function createEmptyScopeSummary(): ScopeProgressSummary {
+  return {
+    completedLessons: 0,
+    totalPublishedLessons: 0,
+    percentage: 0,
+  };
+}
+
 export class ProgressService {
   private readonly provider: ProgressProvider;
-  private readonly content: ContentService;
+  private readonly content?: ContentService;
   private state: LearnerProgressState;
   private storageAvailable: boolean;
   private lastNoticeMessage?: string;
@@ -36,7 +41,7 @@ export class ProgressService {
 
   constructor(
     provider: ProgressProvider = new LocalStorageProgressProvider(),
-    content: ContentService = contentService
+    content?: ContentService
   ) {
     this.provider = provider;
     this.content = content;
@@ -198,24 +203,42 @@ export class ProgressService {
     return getExerciseAttemptSummary(this.state, exerciseId);
   }
 
-  public getWeekProgress(courseSlug: string, weekSlug: string): ScopeProgressSummary {
-    return getWeekProgress(this.content, this.state, courseSlug, weekSlug);
+  public async getWeekProgress(
+    courseSlug: string,
+    weekSlug: string
+  ): Promise<ScopeProgressSummary> {
+    if (!this.content) {
+      return createEmptyScopeSummary();
+    }
+    return await getWeekProgress(this.content, this.state, courseSlug, weekSlug);
   }
 
-  public getCourseProgress(courseSlug: string): ScopeProgressSummary {
-    return getCourseProgress(this.content, this.state, courseSlug);
+  public async getCourseProgress(courseSlug: string): Promise<ScopeProgressSummary> {
+    if (!this.content) {
+      return createEmptyScopeSummary();
+    }
+    return await getCourseProgress(this.content, this.state, courseSlug);
   }
 
-  public getLevelProgress(levelSlug: string): ScopeProgressSummary {
-    return getLevelProgress(this.content, this.state, levelSlug);
+  public async getLevelProgress(levelSlug: string): Promise<ScopeProgressSummary> {
+    if (!this.content) {
+      return createEmptyScopeSummary();
+    }
+    return await getLevelProgress(this.content, this.state, levelSlug);
   }
 
-  public getOverallProgress(): ScopeProgressSummary {
-    return getOverallProgress(this.content, this.state);
+  public async getOverallProgress(): Promise<ScopeProgressSummary> {
+    if (!this.content) {
+      return createEmptyScopeSummary();
+    }
+    return await getOverallProgress(this.content, this.state);
   }
 
-  public getContinueLearningTarget(): ContinueLearningTarget | null {
-    return resolveContinueLearningTarget(this.content, this.state);
+  public async getContinueLearningTarget(): Promise<ContinueLearningTarget | null> {
+    if (!this.content) {
+      return null;
+    }
+    return await resolveContinueLearningTarget(this.content, this.state);
   }
 
   public clearAllProgress(): { state: LearnerProgressState; saveResult: ProgressSaveResult } {
@@ -239,5 +262,12 @@ export class ProgressService {
   }
 }
 
-export const progressService = new ProgressService();
+export function createProgressService(
+  provider: ProgressProvider = new LocalStorageProgressProvider(),
+  content?: ContentService
+): ProgressService {
+  return new ProgressService(provider, content);
+}
+
+export const progressService = createProgressService();
 

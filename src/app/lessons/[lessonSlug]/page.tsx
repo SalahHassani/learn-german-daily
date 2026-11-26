@@ -10,9 +10,9 @@ type PageProps = {
 
 async function LessonContent({ params }: { params: PageProps["params"] }) {
   const { lessonSlug } = await params;
-  const resolved = contentService.getLessonBySlug(lessonSlug);
+  const resolved = await contentService.getLessonBySlug(lessonSlug);
 
-  if (!resolved) {
+  if (!resolved || !resolved.level || !resolved.course || !resolved.week || !resolved.lesson) {
     return (
       <>
         <Breadcrumb

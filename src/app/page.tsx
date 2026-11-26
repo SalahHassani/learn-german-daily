@@ -3,8 +3,8 @@ import { HomeProgressOverview } from "@/components/progress/home-progress-overvi
 import { NavigableCard } from "@/components/navigation/navigable-card";
 import { contentService } from "@/services/content/contentService";
 
-export default function HomePage() {
-  const levels = contentService.getLevels();
+export default async function HomePage() {
+  const levels = await contentService.getLevels();
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">

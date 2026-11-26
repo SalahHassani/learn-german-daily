@@ -121,33 +121,33 @@ export function buildBreadcrumbJsonLd(
   };
 }
 
-export function getPublicSitemapPaths(): string[] {
+export async function getPublicSitemapPaths(): Promise<string[]> {
   const paths = new Set<string>(["/", "/levels"]);
 
-  const levels = contentService
-    .getLevels()
-    .filter((lvl) => lvl.status === "published");
+  const levels = (await contentService.getLevels()).filter(
+    (lvl) => lvl.status === "published"
+  );
 
   for (const level of levels) {
     paths.add(`/levels/${level.slug}`);
 
-    const courses = contentService
-      .getCoursesByLevelSlug(level.slug)
-      .filter((crs) => crs.status === "published");
+    const courses = (await contentService.getCoursesByLevelSlug(level.slug)).filter(
+      (crs) => crs.status === "published"
+    );
 
     for (const course of courses) {
       paths.add(`/courses/${course.slug}`);
 
-      const weeks = contentService
-        .getWeeksByCourseSlug(course.slug)
-        .filter((wk) => wk.status === "published");
+      const weeks = (await contentService.getWeeksByCourseSlug(course.slug)).filter(
+        (wk) => wk.status === "published"
+      );
 
       for (const week of weeks) {
         paths.add(`/courses/${course.slug}/weeks/${week.slug}`);
 
-        const lessons = contentService
-          .getLessonsByWeekSlugs(course.slug, week.slug)
-          .filter((lsn) => lsn.status === "published");
+        const lessons = (
+          await contentService.getLessonsByWeekSlugs(course.slug, week.slug)
+        ).filter((lsn) => lsn.status === "published");
 
         for (const lesson of lessons) {
           paths.add(`/lessons/${lesson.slug}`);

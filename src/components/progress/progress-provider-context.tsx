@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { contentService } from "@/services/content/contentService";
 import { createEmptyProgressState } from "@/services/progress/progressMigrations";
 import { progressService } from "@/services/progress/progressService";
 import type {
@@ -40,6 +39,12 @@ type ProgressContextValue = {
   getLevelProgress: (levelSlug: string) => ScopeProgressSummary;
   getOverallProgress: () => ScopeProgressSummary;
   getContinueLearningTarget: () => ContinueLearningTarget | null;
+};
+
+const EMPTY_SCOPE_SUMMARY: ScopeProgressSummary = {
+  completedLessons: 0,
+  totalPublishedLessons: 0,
+  percentage: 0,
 };
 
 const ProgressContext = createContext<ProgressContextValue | null>(null);
@@ -117,19 +122,11 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         hydrated
           ? progressService.getExerciseSummary(exerciseId)
           : { attemptCount: 0, attempts: [] },
-      getWeekProgress: (courseSlug: string, weekSlug: string) =>
-        hydrated
-          ? progressService.getWeekProgress(courseSlug, weekSlug)
-          : progressService.getWeekProgress(courseSlug, weekSlug),
-      getCourseProgress: (courseSlug: string) =>
-        progressService.getCourseProgress(courseSlug),
-      getLevelProgress: (levelSlug: string) =>
-        progressService.getLevelProgress(levelSlug),
-      getOverallProgress: () => progressService.getOverallProgress(),
-      getContinueLearningTarget: () =>
-        hydrated
-          ? progressService.getContinueLearningTarget()
-          : progressService.getContinueLearningTarget(),
+      getWeekProgress: () => EMPTY_SCOPE_SUMMARY,
+      getCourseProgress: () => EMPTY_SCOPE_SUMMARY,
+      getLevelProgress: () => EMPTY_SCOPE_SUMMARY,
+      getOverallProgress: () => EMPTY_SCOPE_SUMMARY,
+      getContinueLearningTarget: () => null,
     }),
     [
       state,
@@ -142,9 +139,6 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       recordExerciseAttempt,
     ]
   );
-
-  // Keep contentService referenced so hierarchy progress always reflects current content
-  void contentService;
 
   return (
     <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>

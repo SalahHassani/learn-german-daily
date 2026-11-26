@@ -135,33 +135,33 @@ function buildTestDataset(): ContentDataset {
   };
 }
 
-test("Lesson section ordering and adjacent lesson navigation work via ContentService", () => {
+test("Lesson section ordering and adjacent lesson navigation work via ContentService", async () => {
   const provider = new LocalContentProvider(buildTestDataset());
   const service = new ContentService(provider);
 
-  const first = service.getLessonBySlug("lesson-one");
+  const first = await service.getLessonBySlug("lesson-one");
   assert.ok(first, "Expected lesson-one to resolve");
   assert.equal(first.lesson.sections[0]?.id, "sec_rev", "Expected lower order section first");
   assert.equal(first.lesson.sections[1]?.id, "sec_vocab", "Expected higher order section second");
   assert.equal(first.previousLessonSlug, undefined);
   assert.equal(first.nextLessonSlug, "lesson-two");
 
-  const second = service.getLessonBySlug("lesson-two");
+  const second = await service.getLessonBySlug("lesson-two");
   assert.ok(second, "Expected lesson-two to resolve");
   assert.equal(second.previousLessonSlug, "lesson-one");
   assert.equal(second.nextLessonSlug, "lesson-coming-soon");
 });
 
-test("Draft lessons are excluded and coming_soon lessons respect visibility rules", () => {
+test("Draft lessons are excluded and coming_soon lessons respect visibility rules", async () => {
   const dataset = buildTestDataset();
   const provider = new LocalContentProvider(dataset);
   const service = new ContentService(provider);
 
-  assert.equal(service.getLessonBySlug("lesson-draft"), undefined);
+  assert.equal(await service.getLessonBySlug("lesson-draft"), undefined);
   assert.equal(isPublishedStatus("published"), true);
   assert.equal(isComingSoonStatus("coming_soon"), true);
 
-  const weekLessons = service.getLessonsByWeekSlugs("a1-1", "week-1");
+  const weekLessons = await service.getLessonsByWeekSlugs("a1-1", "week-1");
   assert.deepEqual(
     weekLessons.map((l) => l.slug),
     ["lesson-one", "lesson-two", "lesson-coming-soon"]
@@ -210,9 +210,10 @@ test("Content block variants and optional fields validate cleanly", () => {
   assert.equal(collectContentValidationErrors(dataset).length, 0);
 });
 
-test("Local dataset initializes and invalid slugs return undefined", () => {
+test("Local dataset initializes and invalid slugs return undefined", async () => {
   const service = new ContentService(new LocalContentProvider(LOCAL_CONTENT_DATASET));
-  assert.ok(service.getLevels().length > 0);
-  assert.equal(service.getLessonBySlug("non-existent-lesson"), undefined);
+  const levels = await service.getLevels();
+  assert.ok(levels.length > 0);
+  assert.equal(await service.getLessonBySlug("non-existent-lesson"), undefined);
 });
 

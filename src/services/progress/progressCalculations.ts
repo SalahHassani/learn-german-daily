@@ -24,25 +24,29 @@ export function isLessonCompleted(
   return state.lessonsById[lessonId]?.completed === true;
 }
 
-export function getPublishedLessonsForWeek(
+export async function getPublishedLessonsForWeek(
   contentService: ContentService,
   courseSlug: string,
   weekSlug: string
 ) {
-  const weekView = contentService.getWeekBySlugs(courseSlug, weekSlug);
+  const weekView = await contentService.getWeekBySlugs(courseSlug, weekSlug);
   if (!weekView) {
     return [];
   }
   return weekView.lessons.filter((lesson) => lesson.status === "published");
 }
 
-export function getWeekProgress(
+export async function getWeekProgress(
   contentService: ContentService,
   state: LearnerProgressState,
   courseSlug: string,
   weekSlug: string
-): ScopeProgressSummary {
-  const publishedLessons = getPublishedLessonsForWeek(contentService, courseSlug, weekSlug);
+): Promise<ScopeProgressSummary> {
+  const publishedLessons = await getPublishedLessonsForWeek(
+    contentService,
+    courseSlug,
+    weekSlug
+  );
   const totalPublishedLessons = publishedLessons.length;
   const completedLessons = publishedLessons.filter((lesson) =>
     isLessonCompleted(state, lesson.id)
@@ -55,11 +59,11 @@ export function getWeekProgress(
   };
 }
 
-export function getPublishedLessonsForCourse(
+export async function getPublishedLessonsForCourse(
   contentService: ContentService,
   courseSlug: string
 ) {
-  const courseView = contentService.getCourseBySlug(courseSlug);
+  const courseView = await contentService.getCourseBySlug(courseSlug);
   if (!courseView) {
     return [];
   }
@@ -68,7 +72,7 @@ export function getPublishedLessonsForCourse(
     if (week.status !== "published") {
       continue;
     }
-    const weekLessons = contentService.getLessonsByWeekSlugs(courseSlug, week.slug);
+    const weekLessons = await contentService.getLessonsByWeekSlugs(courseSlug, week.slug);
     for (const lesson of weekLessons) {
       if (lesson.status === "published") {
         lessons.push(lesson);
@@ -78,12 +82,12 @@ export function getPublishedLessonsForCourse(
   return lessons;
 }
 
-export function getCourseProgress(
+export async function getCourseProgress(
   contentService: ContentService,
   state: LearnerProgressState,
   courseSlug: string
-): ScopeProgressSummary {
-  const publishedLessons = getPublishedLessonsForCourse(contentService, courseSlug);
+): Promise<ScopeProgressSummary> {
+  const publishedLessons = await getPublishedLessonsForCourse(contentService, courseSlug);
   const totalPublishedLessons = publishedLessons.length;
   const completedLessons = publishedLessons.filter((lesson) =>
     isLessonCompleted(state, lesson.id)
@@ -96,11 +100,11 @@ export function getCourseProgress(
   };
 }
 
-export function getPublishedLessonsForLevel(
+export async function getPublishedLessonsForLevel(
   contentService: ContentService,
   levelSlug: string
 ) {
-  const levelView = contentService.getLevelViewBySlug(levelSlug);
+  const levelView = await contentService.getLevelViewBySlug(levelSlug);
   if (!levelView) {
     return [];
   }
@@ -109,17 +113,17 @@ export function getPublishedLessonsForLevel(
     if (course.status !== "published") {
       continue;
     }
-    lessons.push(...getPublishedLessonsForCourse(contentService, course.slug));
+    lessons.push(...(await getPublishedLessonsForCourse(contentService, course.slug)));
   }
   return lessons;
 }
 
-export function getLevelProgress(
+export async function getLevelProgress(
   contentService: ContentService,
   state: LearnerProgressState,
   levelSlug: string
-): ScopeProgressSummary {
-  const publishedLessons = getPublishedLessonsForLevel(contentService, levelSlug);
+): Promise<ScopeProgressSummary> {
+  const publishedLessons = await getPublishedLessonsForLevel(contentService, levelSlug);
   const totalPublishedLessons = publishedLessons.length;
   const completedLessons = publishedLessons.filter((lesson) =>
     isLessonCompleted(state, lesson.id)
@@ -132,21 +136,25 @@ export function getLevelProgress(
   };
 }
 
-export function getAllPublishedLessonsOrdered(contentService: ContentService) {
+export async function getAllPublishedLessonsOrdered(contentService: ContentService) {
   const ordered = [];
-  for (const level of contentService.getLevels()) {
+  const levels = await contentService.getLevels();
+  for (const level of levels) {
     if (level.status !== "published") {
       continue;
     }
-    for (const course of contentService.getCoursesByLevelSlug(level.slug)) {
+    const courses = await contentService.getCoursesByLevelSlug(level.slug);
+    for (const course of courses) {
       if (course.status !== "published") {
         continue;
       }
-      for (const week of contentService.getWeeksByCourseSlug(course.slug)) {
+      const weeks = await contentService.getWeeksByCourseSlug(course.slug);
+      for (const week of weeks) {
         if (week.status !== "published") {
           continue;
         }
-        for (const lesson of contentService.getLessonsByWeekSlugs(course.slug, week.slug)) {
+        const lessons = await contentService.getLessonsByWeekSlugs(course.slug, week.slug);
+        for (const lesson of lessons) {
           if (lesson.status === "published") {
             ordered.push({
               level,
@@ -162,11 +170,11 @@ export function getAllPublishedLessonsOrdered(contentService: ContentService) {
   return ordered;
 }
 
-export function getOverallProgress(
+export async function getOverallProgress(
   contentService: ContentService,
   state: LearnerProgressState
-): ScopeProgressSummary {
-  const allPublished = getAllPublishedLessonsOrdered(contentService);
+): Promise<ScopeProgressSummary> {
+  const allPublished = await getAllPublishedLessonsOrdered(contentService);
   const totalPublishedLessons = allPublished.length;
   const completedLessons = allPublished.filter(({ lesson }) =>
     isLessonCompleted(state, lesson.id)
@@ -216,11 +224,11 @@ export function getExerciseAttemptSummary(
   };
 }
 
-export function resolveContinueLearningTarget(
+export async function resolveContinueLearningTarget(
   contentService: ContentService,
   state: LearnerProgressState
-): ContinueLearningTarget | null {
-  const orderedPublished = getAllPublishedLessonsOrdered(contentService);
+): Promise<ContinueLearningTarget | null> {
+  const orderedPublished = await getAllPublishedLessonsOrdered(contentService);
   if (orderedPublished.length === 0) {
     return null;
   }

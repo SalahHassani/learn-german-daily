@@ -1,4 +1,6 @@
-﻿import type {
+﻿import "server-only";
+
+import type {
   CEFRLevel,
   ContentDataset,
   Course,
@@ -23,6 +25,15 @@ function sortByDisplayOrder<T extends { displayOrder: number }>(items: readonly 
   return [...items].sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
+const EMPTY_DATASET: ContentDataset = {
+  version: "1",
+  levels: [],
+  courses: [],
+  weeks: [],
+  lessons: [],
+  exercises: [],
+};
+
 export class ContentService {
   private readonly provider: ContentProvider;
 
@@ -30,99 +41,164 @@ export class ContentService {
     this.provider = provider;
   }
 
-  private getDatasetSync(): ContentDataset {
-    const data = this.provider.getDataset();
-    if (data instanceof Promise) {
-      throw new Error("Async provider used with synchronous ContentService accessor.");
+  private async getDatasetSafe(): Promise<ContentDataset> {
+    const dataset = await this.provider.getDataset();
+    if (!dataset) {
+      return EMPTY_DATASET;
     }
-    return data;
+
+    return {
+      version: dataset.version ?? EMPTY_DATASET.version,
+      levels: Array.isArray(dataset.levels) ? dataset.levels : [],
+      courses: Array.isArray(dataset.courses) ? dataset.courses : [],
+      weeks: Array.isArray(dataset.weeks) ? dataset.weeks : [],
+      lessons: Array.isArray(dataset.lessons) ? dataset.lessons : [],
+      exercises: Array.isArray(dataset.exercises) ? dataset.exercises : [],
+    };
   }
 
-  getLevels(): CEFRLevel[] {
-    const { levels } = this.getDatasetSync();
+  async getLevels(): Promise<CEFRLevel[]> {
+    const { levels } = await this.getDatasetSafe();
     return sortByDisplayOrder(levels.filter(isLevelPubliclyVisible));
   }
 
-  getLevelBySlug(levelSlug: string): CEFRLevel | undefined {
-    const { levels } = this.getDatasetSync();
+  async getLevelBySlug(levelSlug: string): Promise<CEFRLevel | undefined> {
+    if (!levelSlug) {
+      return undefined;
+    }
+
+    const { levels } = await this.getDatasetSafe();
     return levels.find((level) => level.slug === levelSlug && isLevelPubliclyVisible(level));
   }
 
-  getCoursesByLevelSlug(levelSlug: string): Course[] {
-    const level = this.getLevelBySlug(levelSlug);
+  async getCoursesByLevelSlug(levelSlug: string): Promise<Course[]> {
+    if (!levelSlug) {
+      return [];
+    }
+
+    const { levels, courses } = await this.getDatasetSafe();
+    const level = levels.find(
+      (item) => item.slug === levelSlug && isLevelPubliclyVisible(item)
+    );
     if (!level) {
       return [];
     }
-    const { courses } = this.getDatasetSync();
+
     return sortByDisplayOrder(
-      courses.filter((course) => course.levelId === level.id && isCoursePubliclyVisible(course, level))
+      courses.filter(
+        (course) => course.levelId === level.id && isCoursePubliclyVisible(course, level)
+      )
     );
   }
 
-  getCourseBySlug(courseSlug: string): ResolvedCourseView | undefined {
-    const { levels, courses, weeks } = this.getDatasetSync();
+  async getCourseBySlug(courseSlug: string): Promise<ResolvedCourseView | undefined> {
+    if (!courseSlug) {
+      return undefined;
+    }
+
+    const { levels, courses, weeks } = await this.getDatasetSafe();
     const course = courses.find((item) => item.slug === courseSlug);
     if (!course) {
       return undefined;
     }
+
     const level = levels.find((item) => item.id === course.levelId);
-    if (!isCoursePubliclyVisible(course, level) || !level) {
+    if (!level || !isCoursePubliclyVisible(course, level)) {
       return undefined;
     }
+
     const visibleWeeks = sortByDisplayOrder(
-      weeks.filter((week) => week.courseId === course.id && isWeekPubliclyVisible(week, course, level))
+      weeks.filter(
+        (week) => week.courseId === course.id && isWeekPubliclyVisible(week, course, level)
+      )
     );
+
     return { level, course, weeks: visibleWeeks };
   }
 
-  getLevelViewBySlug(levelSlug: string): ResolvedLevelView | undefined {
-    const level = this.getLevelBySlug(levelSlug);
+  async getLevelViewBySlug(levelSlug: string): Promise<ResolvedLevelView | undefined> {
+    if (!levelSlug) {
+      return undefined;
+    }
+
+    const { levels, courses } = await this.getDatasetSafe();
+    const level = levels.find(
+      (item) => item.slug === levelSlug && isLevelPubliclyVisible(item)
+    );
     if (!level) {
       return undefined;
     }
-    return { level, courses: this.getCoursesByLevelSlug(levelSlug) };
+
+    const visibleCourses = sortByDisplayOrder(
+      courses.filter(
+        (course) => course.levelId === level.id && isCoursePubliclyVisible(course, level)
+      )
+    );
+
+    return { level, courses: visibleCourses };
   }
 
-  getWeeksByCourseSlug(courseSlug: string): Week[] {
-    const resolved = this.getCourseBySlug(courseSlug);
+  async getWeeksByCourseSlug(courseSlug: string): Promise<Week[]> {
+    const resolved = await this.getCourseBySlug(courseSlug);
     return resolved ? resolved.weeks : [];
   }
 
-  getWeekBySlugs(courseSlug: string, weekSlug: string): ResolvedWeekView | undefined {
-    const courseView = this.getCourseBySlug(courseSlug);
-    if (!courseView) {
+  async getWeekBySlugs(
+    courseSlug: string,
+    weekSlug: string
+  ): Promise<ResolvedWeekView | undefined> {
+    if (!courseSlug || !weekSlug) {
       return undefined;
     }
-    const { levels, weeks, lessons } = this.getDatasetSync();
+
+    const { levels, courses, weeks, lessons } = await this.getDatasetSafe();
+    const course = courses.find((item) => item.slug === courseSlug);
+    if (!course) {
+      return undefined;
+    }
+
+    const level = levels.find((item) => item.id === course.levelId);
+    if (!level || !isCoursePubliclyVisible(course, level)) {
+      return undefined;
+    }
+
     const week = weeks.find(
-      (item) => item.courseId === courseView.course.id && item.slug === weekSlug
+      (item) => item.courseId === course.id && item.slug === weekSlug
     );
-    const level = levels.find((item) => item.id === courseView.course.levelId);
-    if (!week || !isWeekPubliclyVisible(week, courseView.course, level) || !level) {
+    if (!week || !isWeekPubliclyVisible(week, course, level)) {
       return undefined;
     }
+
     const visibleLessons = sortByDisplayOrder(
       lessons.filter(
         (lesson) =>
           lesson.weekId === week.id &&
-          isLessonPubliclyVisible(lesson, week, courseView.course, level)
+          isLessonPubliclyVisible(lesson, week, course, level)
       )
     );
+
     return {
       level,
-      course: courseView.course,
+      course,
       week,
       lessons: visibleLessons,
     };
   }
 
-  getLessonsByWeekSlugs(courseSlug: string, weekSlug: string): StructuredLesson[] {
-    const weekView = this.getWeekBySlugs(courseSlug, weekSlug);
+  async getLessonsByWeekSlugs(
+    courseSlug: string,
+    weekSlug: string
+  ): Promise<StructuredLesson[]> {
+    const weekView = await this.getWeekBySlugs(courseSlug, weekSlug);
     return weekView ? weekView.lessons : [];
   }
 
-  getLessonBySlug(lessonSlug: string): ResolvedLessonView | undefined {
-    const { levels, courses, weeks, lessons } = this.getDatasetSync();
+  async getLessonBySlug(lessonSlug: string): Promise<ResolvedLessonView | undefined> {
+    if (!lessonSlug) {
+      return undefined;
+    }
+
+    const { levels, courses, weeks, lessons } = await this.getDatasetSafe();
     const lesson = lessons.find((item) => item.slug === lessonSlug);
     if (!lesson) {
       return undefined;
@@ -132,7 +208,7 @@ export class ContentService {
     const course = week ? courses.find((item) => item.id === week.courseId) : undefined;
     const level = course ? levels.find((item) => item.id === course.levelId) : undefined;
 
-    if (!isLessonPubliclyVisible(lesson, week, course, level) || !week || !course || !level) {
+    if (!week || !course || !level || !isLessonPubliclyVisible(lesson, week, course, level)) {
       return undefined;
     }
 
@@ -152,7 +228,9 @@ export class ContentService {
 
     const orderedLesson: StructuredLesson = {
       ...lesson,
-      sections: [...lesson.sections].sort((a, b) => a.order - b.order),
+      sections: Array.isArray(lesson.sections)
+        ? [...lesson.sections].sort((a, b) => a.order - b.order)
+        : [],
     };
 
     return {
@@ -165,10 +243,13 @@ export class ContentService {
     };
   }
 
-  getExerciseById(exerciseId: string): ExerciseDefinition | undefined {
-    const exercise = (this.getDatasetSync().exercises ?? []).find(
-      (item) => item.id === exerciseId
-    );
+  async getExerciseById(exerciseId: string): Promise<ExerciseDefinition | undefined> {
+    if (!exerciseId) {
+      return undefined;
+    }
+
+    const { exercises = [] } = await this.getDatasetSafe();
+    const exercise = exercises.find((item) => item.id === exerciseId);
     if (!exercise || isDraftStatus(exercise.status)) {
       return undefined;
     }
@@ -176,5 +257,11 @@ export class ContentService {
   }
 }
 
-export const contentService = new ContentService();
+export function createContentService(
+  provider: ContentProvider = defaultContentProvider
+): ContentService {
+  return new ContentService(provider);
+}
+
+export const contentService = createContentService();
 

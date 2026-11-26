@@ -242,7 +242,7 @@ test("Migration and normalization preserve valid records and recover cleanly", (
   assert.equal(normalized.state.exerciseAttempts.length, 1);
 });
 
-test("ProgressService supports explicit completion, undo, separate exercise attempts, and published-only progress calculations", () => {
+test("ProgressService supports explicit completion, undo, separate exercise attempts, and published-only progress calculations", async () => {
   const g = globalThis as { localStorage?: Storage };
   const originalStorage = g.localStorage;
   const { storage } = createMemoryStorage();
@@ -256,8 +256,9 @@ test("ProgressService supports explicit completion, undo, separate exercise atte
     // Opening a lesson does not mark it complete
     service.recordLessonVisited("lsn_pub_1", "2026-03-01T08:00:00.000Z");
     assert.equal(service.isLessonCompleted("lsn_pub_1"), false);
-    assert.equal(getWeekProgress(content, service.getState(), "a1-1", "week-1").completedLessons, 0);
-    assert.equal(getWeekProgress(content, service.getState(), "a1-1", "week-1").totalPublishedLessons, 2);
+    const initialWeek = await getWeekProgress(content, service.getState(), "a1-1", "week-1");
+    assert.equal(initialWeek.completedLessons, 0);
+    assert.equal(initialWeek.totalPublishedLessons, 2);
 
     // Recording an exercise attempt does not mark lesson complete, and retries keep history
     service.recordExerciseAttempt({
@@ -290,21 +291,26 @@ test("ProgressService supports explicit completion, undo, separate exercise atte
     // Explicit lesson completion and undo
     service.setLessonCompleted("lsn_pub_1", true, "2026-03-01T08:15:00.000Z");
     assert.equal(service.isLessonCompleted("lsn_pub_1"), true);
-    assert.equal(getWeekProgress(content, service.getState(), "a1-1", "week-1").completedLessons, 1);
-    assert.equal(getWeekProgress(content, service.getState(), "a1-1", "week-1").percentage, 50);
-    assert.equal(getCourseProgress(content, service.getState(), "a1-1").percentage, 50);
-    assert.equal(getLevelProgress(content, service.getState(), "a1").percentage, 50);
-    assert.equal(getOverallProgress(content, service.getState()).percentage, 50);
+    const completedWeek = await getWeekProgress(content, service.getState(), "a1-1", "week-1");
+    const completedCourse = await getCourseProgress(content, service.getState(), "a1-1");
+    const completedLevel = await getLevelProgress(content, service.getState(), "a1");
+    const completedOverall = await getOverallProgress(content, service.getState());
+    assert.equal(completedWeek.completedLessons, 1);
+    assert.equal(completedWeek.percentage, 50);
+    assert.equal(completedCourse.percentage, 50);
+    assert.equal(completedLevel.percentage, 50);
+    assert.equal(completedOverall.percentage, 50);
 
     // Next lesson suggested after completing visited lesson
-    const nextTarget = resolveContinueLearningTarget(content, service.getState());
+    const nextTarget = await resolveContinueLearningTarget(content, service.getState());
     assert.equal(nextTarget?.lessonSlug, "day-2");
     assert.equal(nextTarget?.reason, "next-after-completed");
 
     // Undo completion
     service.setLessonCompleted("lsn_pub_1", false, "2026-03-01T08:20:00.000Z");
     assert.equal(service.isLessonCompleted("lsn_pub_1"), false);
-    assert.equal(getWeekProgress(content, service.getState(), "a1-1", "week-1").completedLessons, 0);
+    const undoneWeek = await getWeekProgress(content, service.getState(), "a1-1", "week-1");
+    assert.equal(undoneWeek.completedLessons, 0);
   } finally {
     if (originalStorage) {
       g.localStorage = originalStorage;

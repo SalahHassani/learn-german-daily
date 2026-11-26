@@ -1,5 +1,4 @@
-import { contentService } from "@/services/content/contentService";
-import type { TypedContentBlock } from "@/types/content";
+import type { ExerciseDefinition, TypedContentBlock } from "@/types/content";
 import { ExerciseRunner } from "./exercise-runner";
 
 type ExerciseReferenceBlock = Extract<
@@ -10,14 +9,14 @@ type ExerciseReferenceBlock = Extract<
 type ExerciseBlockRendererProps = {
   block: ExerciseReferenceBlock;
   lessonId?: string;
+  exercise?: ExerciseDefinition;
 };
 
 export function ExerciseBlockRenderer({
   block,
   lessonId,
+  exercise,
 }: ExerciseBlockRendererProps) {
-  const exercise = contentService.getExerciseById(block.exerciseId);
-
   if (!exercise) {
     return (
       <div className="rounded-lg border border-[#D8E1E8] bg-[#EEF3F6] p-4">

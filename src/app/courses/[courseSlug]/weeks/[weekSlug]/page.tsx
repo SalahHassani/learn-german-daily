@@ -12,9 +12,9 @@ type PageProps = {
 
 async function WeekContent({ params }: { params: PageProps["params"] }) {
   const { courseSlug, weekSlug } = await params;
-  const result = contentService.getWeekBySlugs(courseSlug, weekSlug);
+  const result = await contentService.getWeekBySlugs(courseSlug, weekSlug);
 
-  if (!result) {
+  if (!result || !result.level || !result.course || !result.week) {
     return (
       <>
         <Breadcrumb

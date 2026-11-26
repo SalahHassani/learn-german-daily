@@ -4,8 +4,8 @@ import { Breadcrumb } from "@/components/navigation/breadcrumb";
 import { NavigableCard } from "@/components/navigation/navigable-card";
 import { Badge } from "@/components/ui/badge";
 
-export default function LevelsDirectoryPage() {
-  const levels = contentService.getLevels();
+export default async function LevelsDirectoryPage() {
+  const levels = await contentService.getLevels();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">

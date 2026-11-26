@@ -51,8 +51,8 @@ test("buildPageMetadata marks private progress page as noindex", () => {
   });
 });
 
-test("getPublicSitemapPaths includes / and /levels and excludes /progress", () => {
-  const paths = getPublicSitemapPaths();
+test("getPublicSitemapPaths includes / and /levels and excludes /progress", async () => {
+  const paths = await getPublicSitemapPaths();
   assert.ok(paths.includes("/"));
   assert.ok(paths.includes("/levels"));
   assert.ok(!paths.includes("/progress"));

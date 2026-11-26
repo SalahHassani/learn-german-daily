@@ -12,12 +12,18 @@ type PageProps = {
 
 async function LevelContent({ params }: { params: PageProps["params"] }) {
   const { levelSlug } = await params;
-  const resolved = contentService.getLevelViewBySlug(levelSlug);
+  const resolved = await contentService.getLevelViewBySlug(levelSlug);
 
-  if (!resolved) {
+  if (!resolved || !resolved.level) {
     return (
       <>
-        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Levels", href: "/levels" }, { label: levelSlug }]} />
+        <Breadcrumb
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Levels", href: "/levels" },
+            { label: levelSlug },
+          ]}
+        />
         <h1 className="text-3xl font-bold tracking-tight">Level not found</h1>
         <div className="mt-6">
           <StructuralState

@@ -10,7 +10,9 @@
     "test": "node --import ./src/services/content/__tests__/testRunner.mjs --experimental-strip-types --test src/services/content/__tests__/lessonEngine.test.ts src/services/content/__tests__/exerciseEngine.test.ts src/services/content/__tests__/progressEngine.test.ts"
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.4",
     "next": "16.4.6",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -18,8 +20,11 @@
     "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.10",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "^4.3.3",

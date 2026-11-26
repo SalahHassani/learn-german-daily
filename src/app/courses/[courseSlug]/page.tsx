@@ -12,12 +12,18 @@ type PageProps = {
 
 async function CourseContent({ params }: { params: PageProps["params"] }) {
   const { courseSlug } = await params;
-  const result = contentService.getCourseBySlug(courseSlug);
+  const result = await contentService.getCourseBySlug(courseSlug);
 
-  if (!result) {
+  if (!result || !result.level || !result.course) {
     return (
       <>
-        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Levels", href: "/levels" }, { label: courseSlug }]} />
+        <Breadcrumb
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Levels", href: "/levels" },
+            { label: courseSlug },
+          ]}
+        />
         <h1 className="text-3xl font-bold tracking-tight">Course not found</h1>
         <div className="mt-6">
           <StructuralState

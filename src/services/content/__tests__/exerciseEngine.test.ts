@@ -222,18 +222,21 @@ test("Validation detects unanswered required questions and handles zero-question
   assert.equal(emptySummary.percentage, 0);
 });
 
-test("ContentService enforces draft and coming_soon visibility on exercises and validates dataset", () => {
+test("ContentService enforces draft and coming_soon visibility on exercises and validates dataset", async () => {
   const publishedDataset = buildDatasetWithExercise("published");
   assert.equal(collectContentValidationErrors(publishedDataset).length, 0);
   const pubService = new ContentService(new LocalContentProvider(publishedDataset));
-  assert.equal(pubService.getExerciseById("ex_m5_sample")?.id, "ex_m5_sample");
+  const publishedExercise = await pubService.getExerciseById("ex_m5_sample");
+  assert.equal(publishedExercise?.id, "ex_m5_sample");
 
   const draftDataset = buildDatasetWithExercise("draft");
   const draftService = new ContentService(new LocalContentProvider(draftDataset));
-  assert.equal(draftService.getExerciseById("ex_m5_sample"), undefined);
+  const draftExercise = await draftService.getExerciseById("ex_m5_sample");
+  assert.equal(draftExercise, undefined);
 
   const soonDataset = buildDatasetWithExercise("coming_soon");
   const soonService = new ContentService(new LocalContentProvider(soonDataset));
-  assert.equal(soonService.getExerciseById("ex_m5_sample")?.status, "coming_soon");
+  const soonExercise = await soonService.getExerciseById("ex_m5_sample");
+  assert.equal(soonExercise?.status, "coming_soon");
 });
 
