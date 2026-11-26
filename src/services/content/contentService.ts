@@ -2,6 +2,7 @@
   CEFRLevel,
   ContentDataset,
   Course,
+  ExerciseDefinition,
   ResolvedCourseView,
   ResolvedLessonView,
   ResolvedLevelView,
@@ -12,6 +13,7 @@
 import { defaultContentProvider, type ContentProvider } from "./contentProvider";
 import {
   isCoursePubliclyVisible,
+  isDraftStatus,
   isLessonPubliclyVisible,
   isLevelPubliclyVisible,
   isWeekPubliclyVisible,
@@ -162,6 +164,17 @@ export class ContentService {
       nextLessonSlug,
     };
   }
+
+  getExerciseById(exerciseId: string): ExerciseDefinition | undefined {
+    const exercise = (this.getDatasetSync().exercises ?? []).find(
+      (item) => item.id === exerciseId
+    );
+    if (!exercise || isDraftStatus(exercise.status)) {
+      return undefined;
+    }
+    return exercise;
+  }
 }
 
 export const contentService = new ContentService();
+

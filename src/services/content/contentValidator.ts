@@ -242,6 +242,54 @@ export function collectContentValidationErrors(dataset: ContentDataset): string[
     }
   }
 
+  const exercises = dataset.exercises ?? [];
+  const seenExerciseIds = new Set<string>();
+  const validExerciseIds = new Set<string>();
+
+  for (const ex of exercises) {
+    if (!ex.id || seenExerciseIds.has(ex.id)) {
+      errors.push(`Duplicate or missing exercise id: "${ex.id}".`);
+    }
+    seenExerciseIds.add(ex.id);
+    if (ex.id) {
+      validExerciseIds.add(ex.id);
+    }
+    if (!isValidStatus(ex.status)) {
+      errors.push(`Invalid exercise status "${String(ex.status)}" on "${ex.id}".`);
+    }
+    if (!ex.title?.trim()) {
+      errors.push(`Exercise "${ex.id}" is missing a title.`);
+    }
+
+    const seenQuestionIds = new Set<string>();
+    for (const q of ex.questions) {
+      if (!q.id || seenQuestionIds.has(q.id)) {
+        errors.push(`Duplicate or missing question id "${q.id}" in exercise "${ex.id}".`);
+      }
+      seenQuestionIds.add(q.id);
+      if (!q.prompt?.trim()) {
+        errors.push(`Question "${q.id}" in exercise "${ex.id}" is missing a prompt.`);
+      }
+      if (!Number.isFinite(q.points) || q.points < 0) {
+        errors.push(`Question "${q.id}" in exercise "${ex.id}" has invalid points.`);
+      }
+    }
+  }
+
+  if (exercises.length > 0) {
+    for (const lesson of dataset.lessons) {
+      for (const section of lesson.sections) {
+        for (const block of section.blocks) {
+          if (block.kind === "exercise-reference" && !validExerciseIds.has(block.exerciseId)) {
+            errors.push(
+              `Exercise reference "${block.exerciseId}" in lesson "${lesson.slug}" references a missing exercise.`
+            );
+          }
+        }
+      }
+    }
+  }
+
   return errors;
 }
 
@@ -251,4 +299,3 @@ export function validateContentDataset(dataset: ContentDataset): void {
     throw new Error(`Invalid content dataset:\n- ${errors.join("\n- ")}`);
   }
 }
-

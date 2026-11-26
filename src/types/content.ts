@@ -145,13 +145,14 @@ export interface StructuredLesson extends Lesson {
   sections: StructuredLessonSection[];
 }
 
-export interface ContentDataset {
+export type ContentDataset = {
   version: string;
-  levels: CEFRLevel[];
-  courses: Course[];
-  weeks: Week[];
-  lessons: StructuredLesson[];
-}
+  levels: readonly CEFRLevel[];
+  courses: readonly Course[];
+  weeks: readonly Week[];
+  lessons: readonly StructuredLesson[];
+  exercises?: readonly ExerciseDefinition[];
+};
 
 export interface ResolvedLevelView {
   level: CEFRLevel;
@@ -191,3 +192,95 @@ export type {
   Week,
 };
 
+
+export type ExerciseQuestionType =
+  | "single-choice"
+  | "multiple-choice"
+  | "true-false"
+  | "fill-in-the-blank"
+  | "sentence-ordering"
+  | "matching-pairs";
+
+export type ChoiceOption = {
+  id: string;
+  label: string;
+};
+
+export type SentenceToken = {
+  id: string;
+  text: string;
+};
+
+export type MatchingPairItem = {
+  id: string;
+  left: string;
+  right: string;
+};
+
+export type BaseExerciseQuestion = {
+  id: string;
+  displayOrder: number;
+  prompt: string;
+  points: number;
+  hint?: string;
+  explanation?: string;
+};
+
+export type SingleChoiceQuestion = BaseExerciseQuestion & {
+  questionType: "single-choice";
+  options: readonly ChoiceOption[];
+  correctOptionId: string;
+};
+
+export type MultipleChoiceQuestion = BaseExerciseQuestion & {
+  questionType: "multiple-choice";
+  options: readonly ChoiceOption[];
+  correctOptionIds: readonly string[];
+};
+
+export type TrueFalseQuestion = BaseExerciseQuestion & {
+  questionType: "true-false";
+  trueLabel?: string;
+  falseLabel?: string;
+  correctValue: boolean;
+};
+
+export type FillInBlankQuestion = BaseExerciseQuestion & {
+  questionType: "fill-in-the-blank";
+  acceptedAnswers: readonly string[];
+  caseSensitive?: boolean;
+  trimWhitespace?: boolean;
+  placeholder?: string;
+};
+
+export type SentenceOrderingQuestion = BaseExerciseQuestion & {
+  questionType: "sentence-ordering";
+  tokens: readonly SentenceToken[];
+  correctOrderIds: readonly string[];
+  expectedSentenceDisplay?: string;
+};
+
+export type MatchingPairsQuestion = BaseExerciseQuestion & {
+  questionType: "matching-pairs";
+  pairs: readonly MatchingPairItem[];
+};
+
+export type ExerciseQuestion =
+  | SingleChoiceQuestion
+  | MultipleChoiceQuestion
+  | TrueFalseQuestion
+  | FillInBlankQuestion
+  | SentenceOrderingQuestion
+  | MatchingPairsQuestion;
+
+export type ExerciseDefinition = {
+  id: string;
+  slug?: string;
+  title: string;
+  instructions: string;
+  order: number;
+  status: ContentStatus;
+  estimatedDurationMinutes?: number;
+  explanation?: string;
+  questions: readonly ExerciseQuestion[];
+};

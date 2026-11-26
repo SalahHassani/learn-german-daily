@@ -196,5 +196,58 @@ export const LOCAL_CONTENT_DATASET: ContentDataset = {
       sections: [],
     },
   ],
+  exercises: [
+    {
+      id: "ex_a1_1_w1_d1_check",
+      slug: "day-1-greetings-check",
+      title: "Day 1 Practice Check: Greetings & Introductions",
+      instructions:
+        "Answer each question carefully, then submit your answers to review your score and explanations.",
+      order: 1,
+      status: "published",
+      estimatedDurationMinutes: 5,
+      explanation:
+        "Remember: 'Ich bin...' introduces yourself, and 'Hallo' or 'Guten Tag' are standard greetings.",
+      questions: [
+        {
+          id: "q_d1_1",
+          questionType: "single-choice",
+          displayOrder: 1,
+          prompt: 'Which German phrase means "Hello"?',
+          points: 2,
+          hint: "Used informally across German-speaking regions.",
+          explanation: "'Hallo' is a common everyday greeting in German.",
+          options: [
+            { id: "opt_hallo", label: "Hallo" },
+            { id: "opt_tschuss", label: "Tschüss" },
+            { id: "opt_danke", label: "Danke" },
+          ],
+          correctOptionId: "opt_hallo",
+        },
+        {
+          id: "q_d1_2",
+          questionType: "true-false",
+          displayOrder: 2,
+          prompt: '"Ich heiße Anna." means "My name is Anna."',
+          points: 2,
+          trueLabel: "True",
+          falseLabel: "False",
+          correctValue: true,
+          explanation: "'heißen' is used to state your name in German.",
+        },
+        {
+          id: "q_d1_3",
+          questionType: "fill-in-the-blank",
+          displayOrder: 3,
+          prompt: "Complete the greeting: Guten ___ (Morning).",
+          points: 2,
+          acceptedAnswers: ["Morgen", "morgen"],
+          caseSensitive: false,
+          trimWhitespace: true,
+          explanation: "'Guten Morgen' means 'Good morning'.",
+        },
+      ],
+    },
+  ],
 };
 
