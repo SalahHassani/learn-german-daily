@@ -24,6 +24,13 @@ function resolveCandidate(basePath) {
 
 registerHooks({
   resolve(specifier, context, nextResolve) {
+    if (specifier === "server-only") {
+      return {
+        url: "data:text/javascript,export {};",
+        shortCircuit: true,
+      };
+    }
+
     if (specifier.startsWith("@/")) {
       const resolved = resolveCandidate(path.join(srcRoot, specifier.slice(2)));
       if (resolved) {
