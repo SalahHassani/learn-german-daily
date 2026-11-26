@@ -1,73 +1,138 @@
 "use client";
 
-import { useState } from "react";
-import type { ResolvedLessonView } from "@/types/content";
-import { isComingSoonStatus } from "@/services/content/visibilityPolicy";
-import { StructuralState } from "@/components/navigation/structural-state";
+import { useEffect } from "react";
+import { LessonCompletionControl } from "@/components/progress/lesson-completion-control";
+import { useProgress } from "@/components/progress/progress-provider-context";
+import type {
+  CEFRLevel,
+  Course,
+  StructuredLesson,
+  Week,
+} from "@/types/content";
 import { LessonHeader } from "./lesson-header";
+import { LessonNavigation } from "./lesson-navigation";
 import { LessonSectionNavigation } from "./lesson-section-navigation";
 import { LessonSectionRenderer } from "./lesson-section-renderer";
-import { LessonNavigation } from "./lesson-navigation";
 
-type LessonEngineProps = {
-  resolvedLesson: ResolvedLessonView;
+type AdjacentLessonSummary = {
+  slug: string;
+  title: string;
 };
 
-export function LessonEngine({ resolvedLesson }: LessonEngineProps) {
-  const { level, course, week, lesson, previousLessonSlug, nextLessonSlug } = resolvedLesson;
-  const orderedSections = [...lesson.sections].sort((a, b) => a.order - b.order);
-  const [activeSectionId, setActiveSectionId] = useState<string | undefined>(
-    orderedSections[0]?.id
-  );
-  const isComingSoon = isComingSoonStatus(lesson.status);
+type LessonEngineProps = {
+  lesson: StructuredLesson;
+  levelName: string;
+  levelSlug: string;
+  courseTitle: string;
+  courseSlug: string;
+  weekTitle: string;
+  weekSlug: string;
+  previousLesson?: AdjacentLessonSummary;
+  nextLesson?: AdjacentLessonSummary;
+};
+
+export function LessonEngine({
+  lesson,
+  levelName,
+  levelSlug,
+  courseTitle,
+  courseSlug,
+  weekTitle,
+  weekSlug,
+  previousLesson,
+  nextLesson,
+}: LessonEngineProps) {
+  const { recordLessonVisited } = useProgress();
+
+  const level = {
+    id: levelSlug,
+    slug: levelSlug,
+    name: levelName,
+    title: levelName,
+  } as unknown as CEFRLevel;
+
+  const course = {
+    id: courseSlug,
+    slug: courseSlug,
+    title: courseTitle,
+    name: courseTitle,
+  } as unknown as Course;
+
+  const week = {
+    id: weekSlug,
+    slug: weekSlug,
+    title: weekTitle,
+    name: weekTitle,
+  } as unknown as Week;
+
+  useEffect(() => {
+    if (lesson.status === "published") {
+      recordLessonVisited(lesson.id);
+    }
+  }, [lesson.id, lesson.status, recordLessonVisited]);
+
+  const sortedSections = [...lesson.sections].sort((a, b) => a.order - b.order);
 
   return (
-    <div>
-      <LessonHeader level={level} course={course} week={week} lesson={lesson} />
+    <article className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="space-y-8">
+        <LessonHeader
+          level={level}
+          course={course}
+          week={week}
+          lesson={lesson}
+        />
 
-      {isComingSoon ? (
-        <div className="mt-8">
-          <StructuralState
-            title={`${lesson.title} — Coming soon`}
-            description={`Lesson content for ${lesson.title} in ${week.title} is planned and not yet available.`}
-            actionHref={`/courses/${course.slug}/weeks/${week.slug}`}
-            actionLabel={`Back to ${week.title}`}
-          />
-        </div>
-      ) : (
-        <>
-          <LessonSectionNavigation
-            sections={orderedSections}
-            activeSectionId={activeSectionId}
-            onSelectSection={setActiveSectionId}
-          />
+        {lesson.status === "coming_soon" ? (
+          <section
+            aria-label="Lesson status"
+            className="rounded-lg border border-[#D8E1E8] bg-[#EEF3F6] p-6"
+          >
+            <h2 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-[#17324D]">
+              Coming soon
+            </h2>
+            <p className="mt-2 text-sm text-[#263746]">
+              This lesson is scheduled in the curriculum roadmap and is not yet published.
+            </p>
+          </section>
+        ) : (
+          <>
+            <LessonSectionNavigation sections={sortedSections} />
 
-          {orderedSections.length === 0 ? (
-            <div className="mt-8">
-              <StructuralState
-                title="Lesson sections pending"
-                description={`No structured sections have been published for ${lesson.title} yet.`}
-                actionHref={`/courses/${course.slug}/weeks/${week.slug}`}
-                actionLabel={`Back to ${week.title}`}
-              />
-            </div>
-          ) : (
-            <div className="mt-8 space-y-6">
-              {orderedSections.map((section) => (
-                <LessonSectionRenderer key={section.id} section={section} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+            {sortedSections.length === 0 ? (
+              <section
+                aria-label="Lesson content"
+                className="rounded-lg border border-[#D8E1E8] bg-[#FAFBFC] p-6"
+              >
+                <p className="text-sm text-[#64748B]">
+                  No study sections have been added to this lesson yet.
+                </p>
+              </section>
+            ) : (
+              <div className="space-y-10">
+                {sortedSections.map((section) => (
+                  <LessonSectionRenderer
+                    key={section.id}
+                    section={section}
+                  />
+                ))}
+              </div>
+            )}
 
-      <LessonNavigation
-        course={course}
-        week={week}
-        previousLessonSlug={previousLessonSlug}
-        nextLessonSlug={nextLessonSlug}
-      />
-    </div>
+            <LessonCompletionControl
+              lessonId={lesson.id}
+              lessonTitle={lesson.title}
+            />
+          </>
+        )}
+
+        <LessonNavigation
+          course={course}
+          week={week}
+          previousLessonSlug={previousLesson?.slug}
+          nextLessonSlug={nextLesson?.slug}
+        />
+      </div>
+    </article>
   );
 }
-

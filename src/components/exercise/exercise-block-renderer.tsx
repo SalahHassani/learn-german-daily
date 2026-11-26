@@ -1,41 +1,48 @@
 import { contentService } from "@/services/content/contentService";
-import { isComingSoonStatus } from "@/services/content/visibilityPolicy";
+import type { TypedContentBlock } from "@/types/content";
 import { ExerciseRunner } from "./exercise-runner";
 
+type ExerciseReferenceBlock = Extract<
+  TypedContentBlock,
+  { kind: "exercise-reference" }
+>;
+
 type ExerciseBlockRendererProps = {
-  exerciseId: string;
-  summary: string;
+  block: ExerciseReferenceBlock;
+  lessonId?: string;
 };
 
-export function ExerciseBlockRenderer({ exerciseId, summary }: ExerciseBlockRendererProps) {
-  const exercise = contentService.getExerciseById(exerciseId);
+export function ExerciseBlockRenderer({
+  block,
+  lessonId,
+}: ExerciseBlockRendererProps) {
+  const exercise = contentService.getExerciseById(block.exerciseId);
 
   if (!exercise) {
     return (
-      <div
-        role="status"
-        className="rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-secondary)]/50 p-4 text-sm text-[var(--text-secondary)]"
-      >
-        <p className="font-medium text-[var(--text-primary)]">Exercise currently unavailable</p>
-        <p className="mt-1">{summary}</p>
-      </div>
-    );
-  }
-
-  if (isComingSoonStatus(exercise.status)) {
-    return (
-      <div
-        role="status"
-        className="rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-secondary)]/50 p-4 text-sm text-[var(--text-secondary)]"
-      >
-        <p className="font-medium text-[var(--text-primary)]">
-          {exercise.title} — Coming soon
+      <div className="rounded-lg border border-[#D8E1E8] bg-[#EEF3F6] p-4">
+        <p className="text-sm font-medium text-[#17324D]">{block.summary}</p>
+        <p className="mt-1 text-xs text-[#64748B]">
+          Practice exercise is currently unavailable.
         </p>
-        <p className="mt-1">{exercise.instructions}</p>
       </div>
     );
   }
 
-  return <ExerciseRunner exercise={exercise} />;
+  if (exercise.status === "coming_soon") {
+    return (
+      <div className="rounded-lg border border-[#D8E1E8] bg-[#EEF3F6] p-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-[#17324D]">{exercise.title}</p>
+          <span className="inline-flex items-center rounded-md border border-[#D8E1E8] bg-[#FAFBFC] px-2 py-0.5 text-xs font-medium text-[#64748B]">
+            Coming soon
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-[#263746]">{block.summary}</p>
+      </div>
+    );
+  }
+
+  return <ExerciseRunner exercise={exercise} lessonId={lessonId} />;
 }
 

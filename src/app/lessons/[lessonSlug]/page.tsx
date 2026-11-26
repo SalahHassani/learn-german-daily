@@ -50,7 +50,15 @@ async function LessonContent({ params }: { params: PageProps["params"] }) {
       />
 
       <div className="mt-6">
-        <LessonEngine resolvedLesson={resolved} />
+        <LessonEngine
+          lesson={lesson}
+          levelName={level.name ?? levelCode}
+          levelSlug={level.slug}
+          courseTitle={course.title}
+          courseSlug={course.slug}
+          weekTitle={week.title}
+          weekSlug={week.slug}
+        />
       </div>
     </>
   );

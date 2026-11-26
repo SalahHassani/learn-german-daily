@@ -1,49 +1,40 @@
 ﻿import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Inter, Manrope } from "next/font/google";
+import type { ReactNode } from "react";
+import { ProgressProvider } from "@/components/progress/progress-provider-context";
+import { SiteFooter } from "@/components/navigation/site-footer";
+import { SiteHeader } from "@/components/navigation/site-header";
 import "./globals.css";
-import { siteConfig } from "@/config/site";
-import { SiteHeader } from "@/components/layout/site-header";
-import { SiteFooter } from "@/components/layout/site-footer";
 
 const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-manrope",
+  variable: "--font-heading",
   display: "swap",
 });
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: siteConfig.name,
-  description: siteConfig.tagline,
+  title: {
+    default: "Learn German Daily",
+    template: "%s | Learn German Daily",
+  },
+  description: "A little German. Every day. Structured German courses starting with A1.1.",
 };
 
-function HeaderFallback() {
-  return (
-    <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <span className="font-[var(--font-heading)] text-lg font-bold tracking-tight text-[var(--brand-navy)]">
-          {siteConfig.name}
-        </span>
-      </div>
-    </header>
-  );
-}
-
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
-      <body className="flex min-h-screen flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased selection:bg-[var(--bg-surface-secondary)] selection:text-[var(--brand-navy)]">
-        <Suspense fallback={<HeaderFallback />}>
+      <body className="flex min-h-screen flex-col bg-[#FAFBFC] font-[family-name:var(--font-body)] text-[#263746] antialiased">
+        <ProgressProvider>
           <SiteHeader />
-        </Suspense>
-        <div className="flex-1">{children}</div>
-        <SiteFooter />
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </ProgressProvider>
       </body>
     </html>
   );

@@ -1,110 +1,78 @@
 import Link from "next/link";
-import { siteConfig } from "@/config/site";
-import { contentService } from "@/services/content/contentService";
-import { getStatusLabel } from "@/services/content/visibilityPolicy";
+import { HomeProgressOverview } from "@/components/progress/home-progress-overview";
 import { NavigableCard } from "@/components/navigation/navigable-card";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Divider } from "@/components/ui/divider";
-
-const JOURNEY_STEPS = [
-  {
-    step: "1. CEFR Level",
-    detail: "Broad proficiency bands from A1 through C2 establish clear progression scope.",
-  },
-  {
-    step: "2. Course",
-    detail: "Focused course sequences organize study blocks within each CEFR level.",
-  },
-  {
-    step: "3. Week",
-    detail: "Weekly segments group structured daily study sessions at a steady pace.",
-  },
-  {
-    step: "4. Lesson",
-    detail: "Individual lesson routes provide dedicated study entry points along the hierarchy.",
-  },
-];
+import { contentService } from "@/services/content/contentService";
 
 export default function HomePage() {
   const levels = contentService.getLevels();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-      <section aria-labelledby="hero-heading" className="max-w-3xl">
-        <p className="text-sm font-medium text-[var(--accent-academic-blue)]">{siteConfig.tagline}</p>
-        <h1 id="hero-heading" className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-          {siteConfig.name}
-        </h1>
-        <p className="mt-4 text-base leading-relaxed text-[var(--text-primary)] sm:text-lg">
-          A calm, structured German-learning environment built around CEFR levels, courses, weeks, and lessons.
-          Designed for focused daily study without clutter.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          <Link
-            href="/levels"
-            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent-academic-blue)] px-5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-academic-blue-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="space-y-12">
+        <section aria-labelledby="hero-heading" className="space-y-4">
+          <p className="text-xs font-semibold tracking-wider text-[#245B78] uppercase">
+            Structured German Study
+          </p>
+          <h1
+            id="hero-heading"
+            className="font-[family-name:var(--font-heading)] text-4xl font-semibold tracking-tight text-[#17324D] sm:text-5xl"
           >
-            Explore courses and levels
-          </Link>
-        </div>
-      </section>
-
-      <Divider className="my-12" />
-
-      <section aria-labelledby="journey-heading">
-        <h2 id="journey-heading" className="text-2xl font-bold tracking-tight">
-          Learning structure
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)] sm:text-base">
-          Navigate step by step from proficiency levels down to individual lessons.
-        </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {JOURNEY_STEPS.map((item) => (
-            <Card key={item.step} surface="secondary">
-              <h3 className="text-base font-semibold">{item.step}</h3>
-              <p className="mt-2 text-sm text-[var(--text-primary)]">{item.detail}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section aria-labelledby="levels-entry-heading" className="mt-14">
-        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
-          <div>
-            <h2 id="levels-entry-heading" className="text-2xl font-bold tracking-tight">
-              CEFR levels
-            </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Select a level to view its courses and hierarchy.
-            </p>
+            Learn German Daily
+          </h1>
+          <p className="max-w-2xl text-base leading-relaxed text-[#263746]">
+            A little German. Every day. Move steadily through CEFR levels, courses, weeks, and structured lessons with clear explanations and interactive practice.
+          </p>
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Link
+              href="/levels"
+              className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#17324D] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#245B78] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245B78]"
+            >
+              Browse CEFR levels
+            </Link>
           </div>
-          <Link
-            href="/levels"
-            className="text-sm font-medium text-[var(--accent-academic-blue)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
-          >
-            View all levels
-          </Link>
-        </div>
+        </section>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {levels.map((level) => {
-            const statusLabel = getStatusLabel(level.status);
-            return (
-              <NavigableCard key={level.id} href={`/levels/${level.slug}`} surface="standard">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">{level.name}</h3>
-                  {statusLabel ? <Badge tone="neutral">{statusLabel}</Badge> : null}
+        <HomeProgressOverview />
+
+        <section aria-labelledby="cefr-levels-heading" className="space-y-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2
+              id="cefr-levels-heading"
+              className="font-[family-name:var(--font-heading)] text-2xl font-semibold text-[#17324D]"
+            >
+              CEFR Levels
+            </h2>
+            <Link
+              href="/levels"
+              className="text-sm font-medium text-[#245B78] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245B78]"
+            >
+              All levels
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {levels.map((level) => (
+              <NavigableCard
+                key={level.id}
+                href={`/levels/${level.slug}`}
+                className="rounded-lg border border-[#D8E1E8] bg-[#FAFBFC] p-5 transition-colors hover:border-[#245B78] hover:bg-[#EEF3F6]/60"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-[#17324D]">
+                    {level.name}
+                  </h3>
+                  {level.status !== "published" ? (
+                    <span className="inline-flex shrink-0 items-center rounded-md border border-[#D8E1E8] bg-[#EEF3F6] px-2 py-0.5 text-xs font-medium text-[#64748B]">
+                      Coming soon
+                    </span>
+                  ) : null}
                 </div>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">{level.description}</p>
-                <span className="mt-4 inline-block text-sm font-medium text-[var(--accent-academic-blue)] group-hover:underline">
-                  Open {level.slug.toUpperCase()}
-                </span>
+                <p className="mt-2 text-sm text-[#263746]">{level.description}</p>
               </NavigableCard>
-            );
-          })}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

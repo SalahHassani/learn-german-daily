@@ -1,7 +1,7 @@
 import type { TypedContentBlock } from "@/types/content";
+import { ExerciseBlockRenderer } from "../exercise/exercise-block-renderer";
 import {
   ExampleSentenceView,
-  ExerciseReferenceView,
   GrammarExplanationView,
   ReadingPassageView,
   SentenceConstructionView,
@@ -11,35 +11,44 @@ import { VocabularyItemView, VocabularyListView } from "./vocabulary-view";
 
 type ContentBlockRendererProps = {
   block: TypedContentBlock;
+  lessonId?: string;
 };
 
-export function ContentBlockRenderer({ block }: ContentBlockRendererProps) {
+export function ContentBlockRenderer({ block, lessonId }: ContentBlockRendererProps) {
   switch (block.kind) {
+    case "heading": {
+      if (block.level === 2) {
+        return (
+          <h2 className="font-[family-name:var(--font-heading)] text-xl font-semibold text-[#17324D]">
+            {block.text}
+          </h2>
+        );
+      }
+      if (block.level === 3) {
+        return (
+          <h3 className="font-[family-name:var(--font-heading)] text-lg font-semibold text-[#17324D]">
+            {block.text}
+          </h3>
+        );
+      }
+      return (
+        <h4 className="font-[family-name:var(--font-heading)] text-base font-semibold text-[#17324D]">
+          {block.text}
+        </h4>
+      );
+    }
     case "text":
       return (
-        <p className="max-w-prose text-base leading-relaxed text-[var(--text-primary)]">
+        <p className="text-base leading-relaxed text-[#263746]">
           {block.body}
         </p>
       );
-
-    case "heading":
-      if (block.level === 2) {
-        return <h2 className="text-2xl font-bold tracking-tight">{block.text}</h2>;
-      }
-      if (block.level === 4) {
-        return <h4 className="text-base font-semibold">{block.text}</h4>;
-      }
-      return <h3 className="text-xl font-semibold">{block.text}</h3>;
-
     case "vocabulary-item":
-      return <VocabularyItemView item={block.item} />;
-
+      return <VocabularyItemView {...block} />;
     case "vocabulary-list":
-      return <VocabularyListView items={block.items} />;
-
+      return <VocabularyListView {...block} />;
     case "verb-info":
       return <VerbInfoView verb={block.verb} />;
-
     case "verb-conjugation":
       return (
         <VerbConjugationView
@@ -48,46 +57,22 @@ export function ContentBlockRenderer({ block }: ContentBlockRendererProps) {
           notes={block.notes}
         />
       );
-
     case "grammar-explanation":
-      return (
-        <GrammarExplanationView
-          ruleTitle={block.ruleTitle}
-          explanation={block.explanation}
-          examples={block.examples}
-        />
-      );
-
+      return <GrammarExplanationView {...block} />;
     case "example-sentence":
-      return <ExampleSentenceView german={block.german} english={block.english} />;
-
+      return <ExampleSentenceView {...block} />;
     case "reading-passage":
-      return (
-        <ReadingPassageView
-          title={block.title}
-          germanText={block.germanText}
-          translationNote={block.translationNote}
-        />
-      );
-
+      return <ReadingPassageView {...block} />;
     case "sentence-construction":
-      return (
-        <SentenceConstructionView prompt={block.prompt} targetHint={block.targetHint} />
-      );
-
+      return <SentenceConstructionView {...block} />;
     case "exercise-reference":
-      return (
-        <ExerciseReferenceView exerciseId={block.exerciseId} summary={block.summary} />
-      );
-
+      return <ExerciseBlockRenderer block={block} lessonId={lessonId} />;
     default: {
-      const unknownBlock = block as { id?: string; kind?: string };
+      const exhaustiveCheck: never = block;
+      void exhaustiveCheck;
       return (
-        <div
-          role="status"
-          className="rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--surface-secondary)] p-4 text-sm text-[var(--text-secondary)]"
-        >
-          Unsupported content block{unknownBlock.kind ? ` (${unknownBlock.kind})` : ""} skipped.
+        <div className="rounded-lg border border-[#D8E1E8] bg-[#EEF3F6] p-4 text-sm text-[#64748B]">
+          Unsupported lesson content block.
         </div>
       );
     }

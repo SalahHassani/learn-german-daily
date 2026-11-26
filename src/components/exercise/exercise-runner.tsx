@@ -1,46 +1,86 @@
 "use client";
 
-import { useState } from "react";
-import type { ExerciseDefinition } from "@/types/content";
+import { useRef, useState, type ComponentProps } from "react";
+import { useProgress } from "@/components/progress/progress-provider-context";
 import {
   createInitialAnswerMap,
   evaluateExercise,
   validateQuestionAnswered,
-  type ExerciseEvaluationSummary,
-  type QuestionAnswerValue,
 } from "@/services/exercise/exerciseEvaluator";
+import type { ExerciseDefinition } from "@/types/content";
 import { ExerciseQuestionCard } from "./exercise-question-card";
 import { ExerciseResultsSummary } from "./exercise-results-summary";
 
+type ExerciseAnswerMap = ReturnType<typeof createInitialAnswerMap>;
+type ExerciseEvaluationSummary = ReturnType<typeof evaluateExercise>;
+type QuestionCardProps = ComponentProps<typeof ExerciseQuestionCard>;
+type QuestionAnswerValue = QuestionCardProps["answer"];
+type EvaluatedQuestionResult = NonNullable<QuestionCardProps["evaluation"]>;
+
 type ExerciseRunnerProps = {
   exercise: ExerciseDefinition;
+  lessonId?: string;
 };
 
-export function ExerciseRunner({ exercise }: ExerciseRunnerProps) {
+function extractEvaluationMap(
+  summary: ExerciseEvaluationSummary | null
+): Map<string, EvaluatedQuestionResult> {
+  const map = new Map<string, EvaluatedQuestionResult>();
+  if (!summary || typeof summary !== "object") {
+    return map;
+  }
+
+  const record = summary as Record<string, unknown>;
+  const candidates = [
+    record.results,
+    record.questionResults,
+    record.evaluations,
+    record.items,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      for (const entry of candidate) {
+        if (
+          entry &&
+          typeof entry === "object" &&
+          "questionId" in entry &&
+          typeof (entry as { questionId: unknown }).questionId === "string"
+        ) {
+          map.set(
+            (entry as { questionId: string }).questionId,
+            entry as EvaluatedQuestionResult
+          );
+        }
+      }
+      break;
+    }
+  }
+
+  return map;
+}
+
+export function ExerciseRunner({ exercise, lessonId }: ExerciseRunnerProps) {
+  const { recordExerciseAttempt } = useProgress();
+  const startedAtRef = useRef<string>(new Date().toISOString());
+
+  const [answers, setAnswers] = useState<ExerciseAnswerMap>(() =>
+    createInitialAnswerMap(exercise.questions)
+  );
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [summary, setSummary] = useState<ExerciseEvaluationSummary | null>(null);
+  const [attemptNumber, setAttemptNumber] = useState<number>(1);
+
   const orderedQuestions = [...exercise.questions].sort(
     (a, b) => a.displayOrder - b.displayOrder
   );
 
-  const [attemptNumber, setAttemptNumber] = useState(1);
-  const [answers, setAnswers] = useState<Record<string, QuestionAnswerValue>>(() =>
-    createInitialAnswerMap(orderedQuestions)
-  );
-  const [questionErrors, setQuestionErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [resultSummary, setResultSummary] = useState<ExerciseEvaluationSummary | null>(
-    null
-  );
-
-  const totalPoints = orderedQuestions.reduce(
-    (sum, q) => sum + (Number.isFinite(q.points) && q.points > 0 ? q.points : 0),
-    0
-  );
-
-  const isSubmitted = resultSummary !== null;
-
-  const handleAnswerChange = (questionId: string, nextValue: QuestionAnswerValue) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: nextValue }));
-    setQuestionErrors((prev) => {
+  function handleAnswerChange(questionId: string, nextAnswer: QuestionAnswerValue) {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: nextAnswer as ExerciseAnswerMap[string],
+    }));
+    setValidationErrors((prev) => {
       if (!prev[questionId]) {
         return prev;
       }
@@ -48,124 +88,119 @@ export function ExerciseRunner({ exercise }: ExerciseRunnerProps) {
       delete next[questionId];
       return next;
     });
-    setFormError(null);
-  };
+  }
 
-  const handleSubmit = (event: React.FormEvent) => {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (orderedQuestions.length === 0) {
-      setFormError("This exercise does not contain any questions yet.");
-      return;
-    }
 
     const nextErrors: Record<string, string> = {};
     for (const question of orderedQuestions) {
       const validationMessage = validateQuestionAnswered(question, answers[question.id]);
-      if (validationMessage) {
+      if (typeof validationMessage === "string" && validationMessage.trim().length > 0) {
         nextErrors[question.id] = validationMessage;
       }
     }
 
     if (Object.keys(nextErrors).length > 0) {
-      setQuestionErrors(nextErrors);
-      setFormError("Please complete all required questions before submitting.");
+      setValidationErrors(nextErrors);
+      setSummary(null);
       return;
     }
 
-    setQuestionErrors({});
-    setFormError(null);
-    setResultSummary(evaluateExercise(exercise, answers));
-  };
+    const evaluated = evaluateExercise(exercise, answers);
+    const submittedAt = new Date().toISOString();
 
-  const handleRetry = () => {
+    recordExerciseAttempt({
+      exerciseId: exercise.id,
+      ...(lessonId ? { lessonId } : {}),
+      startedAt: startedAtRef.current,
+      submittedAt,
+      earnedPoints: evaluated.earnedPoints,
+      totalPoints: evaluated.totalPoints,
+      percentage: evaluated.percentage,
+      correctCount: evaluated.correctCount,
+      totalQuestions: evaluated.totalQuestions,
+    });
+
+    setValidationErrors({});
+    setSummary(evaluated);
+  }
+
+  function handleRetry() {
+    startedAtRef.current = new Date().toISOString();
+    setAnswers(createInitialAnswerMap(exercise.questions));
+    setValidationErrors({});
+    setSummary(null);
     setAttemptNumber((prev) => prev + 1);
-    setAnswers(createInitialAnswerMap(orderedQuestions));
-    setQuestionErrors({});
-    setFormError(null);
-    setResultSummary(null);
-  };
+  }
 
-  const evaluationByQuestionId = new Map(
-    resultSummary?.questionResults.map((res) => [res.questionId, res]) ?? []
-  );
+  const evaluationMap = extractEvaluationMap(summary);
+  const isSubmitted = summary !== null;
 
   return (
     <section
-      aria-labelledby={`exercise-title-${exercise.id}`}
-      className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-secondary)]/30 p-5 sm:p-7"
+      aria-label={exercise.title}
+      className="space-y-6 rounded-xl border border-[#D8E1E8] bg-[#FAFBFC] p-5 sm:p-6"
     >
-      <header className="border-b border-[var(--border-subtle)] pb-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-[var(--text-secondary)]">
-          <span className="uppercase tracking-wide">Interactive Exercise</span>
-          <span>
+      <header className="space-y-1 border-b border-[#D8E1E8] pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold tracking-wider text-[#245B78] uppercase">
+            Practice Exercise · Attempt #{attemptNumber}
+          </p>
+          <span className="text-xs text-[#64748B]">
             {orderedQuestions.length}{" "}
-            {orderedQuestions.length === 1 ? "question" : "questions"} &middot; {totalPoints}{" "}
-            {totalPoints === 1 ? "point" : "points"}
-            {typeof exercise.estimatedDurationMinutes === "number"
-              ? ` · ~${exercise.estimatedDurationMinutes} min`
-              : ""}
+            {orderedQuestions.length === 1 ? "question" : "questions"}
           </span>
         </div>
-
-        <h3
-          id={`exercise-title-${exercise.id}`}
-          className="mt-1.5 text-xl font-bold text-[var(--text-primary)] sm:text-2xl"
-        >
+        <h3 className="font-[family-name:var(--font-heading)] text-xl font-semibold text-[#17324D]">
           {exercise.title}
         </h3>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-[var(--text-primary)]">
-          {exercise.instructions}
-        </p>
+        {exercise.instructions ? (
+          <p className="text-sm text-[#263746]">{exercise.instructions}</p>
+        ) : null}
       </header>
 
       {orderedQuestions.length === 0 ? (
-        <p className="mt-5 text-sm text-[var(--text-secondary)]">
-          No questions are available in this exercise yet.
+        <p className="text-sm text-[#64748B]">
+          No questions are configured for this exercise yet.
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          {orderedQuestions.map((question, index) => (
-            <ExerciseQuestionCard
-              key={question.id}
-              question={question}
-              questionNumber={index + 1}
-              answer={answers[question.id]}
-              evaluation={evaluationByQuestionId.get(question.id)}
-              validationError={questionErrors[question.id]}
-              isSubmitted={isSubmitted}
-              onChangeAnswer={(nextVal) => handleAnswerChange(question.id, nextVal)}
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+          <div className="space-y-5">
+            {orderedQuestions.map((question, index) => (
+              <ExerciseQuestionCard
+                key={question.id}
+                question={question}
+                questionNumber={index + 1}
+                answer={answers[question.id] as QuestionAnswerValue}
+                evaluation={evaluationMap.get(question.id)}
+                validationError={validationErrors[question.id]}
+                isSubmitted={isSubmitted}
+                onChangeAnswer={(nextAnswer) =>
+                  handleAnswerChange(question.id, nextAnswer)
+                }
+              />
+            ))}
+          </div>
+
+          {summary ? (
+            <ExerciseResultsSummary
+              summary={summary}
+              attemptNumber={attemptNumber}
+              onRetry={handleRetry}
             />
-          ))}
-
-          {formError ? (
-            <p role="alert" className="text-sm font-medium text-[#B54747]">
-              {formError}
-            </p>
-          ) : null}
-
-          {!isSubmitted ? (
-            <div className="pt-1">
+          ) : (
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 type="submit"
-                className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-[var(--accent-academic-blue)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--accent-academic-blue-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-academic-blue)]"
+                className="min-h-11 rounded-md bg-[#17324D] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#245B78] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245B78]"
               >
-                Submit answers
+                Check answers
               </button>
             </div>
-          ) : null}
+          )}
         </form>
       )}
-
-      {resultSummary ? (
-        <div className="mt-6">
-          <ExerciseResultsSummary
-            summary={resultSummary}
-            attemptNumber={attemptNumber}
-            onRetry={handleRetry}
-          />
-        </div>
-      ) : null}
     </section>
   );
 }
